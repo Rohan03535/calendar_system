@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBS Multi-User Calendar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="overlay active">
+        <div class="glass-panel login-card">
+            <h1>Welcome Back</h1>
+            <p>Sign in to your shared calendar workspace.</p>
+            <div class="input-group">
+                <input type="email" id="login-email" placeholder="alice@student.uni.edu">
+                <button id="login-btn" class="btn-primary">Sign In</button>
+            </div>
+            <p id="login-error" class="error-text"></p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-container" class="hidden">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="user-profile">
+                <div class="avatar" id="user-avatar">?</div>
+                <div>
+                    <h3 id="user-name">Loading...</h3>
+                    <p class="subtitle" id="user-email">loading@example.com</p>
+                </div>
+                <button id="logout-btn" class="btn-icon" title="Logout">🚪</button>
+            </div>
+            
+            <button id="new-event-btn" class="btn-primary btn-block">+ New Event</button>
+
+            <div class="notifications-section">
+                <h3>Notifications <span id="notif-badge" class="badge">0</span></h3>
+                <div id="notifications-list" class="scroll-list">
+                    <!-- Notifications JS injected here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="calendar-header glass-panel">
+                <div class="month-nav">
+                    <button id="prev-month" class="btn-icon">◀</button>
+                    <h2 id="current-month-display">November 2023</h2>
+                    <button id="next-month" class="btn-icon">▶</button>
+                </div>
+            </header>
+            
+            <div class="calendar-grid-wrapper glass-panel">
+                <div class="weekdays">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- Days JS injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Event Creation Modal -->
+    <div id="event-modal" class="overlay hidden">
+        <div class="glass-panel modal-card">
+            <h2>Create New Event</h2>
+            <form id="event-form">
+                <input type="text" id="ev-title" placeholder="Event Title" required>
+                <select id="ev-category" style="width:100%; padding:0.8rem; margin-bottom:1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:8px;">
+                    <option value="" style="color:black">No Category</option>
+                    <option value="1" style="color:black">Work</option>
+                    <option value="2" style="color:black">Personal</option>
+                    <option value="3" style="color:black">Urgent</option>
+                </select>
+                <div class="split-inputs">
+                    <input type="datetime-local" id="ev-start" required>
+                    <input type="datetime-local" id="ev-end" required>
+                </div>
+                <textarea id="ev-description" placeholder="Add some description..."></textarea>
+                <input type="text" id="ev-location" placeholder="Location">
+                
+                <div class="form-row checkbox-row">
+                    <label>
+                        <input type="checkbox" id="ev-recurring"> Is Recurring Event
+                    </label>
+                </div>
+                
+                <div id="recurring-options" class="hidden">
+                    <select id="ev-frequency">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                    <input type="date" id="ev-recurrence-end" placeholder="Recurrence End Date">
+                </div>
+
+                <div class="invitees-section">
+                    <label>Invite Participants</label>
+                    <div id="ev-invitees" style="max-height: 100px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="close-modal-btn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div id="event-detail-modal" class="overlay hidden">
+        <div class="glass-panel modal-card" style="position: relative;">
+            <h2 id="det-title" contenteditable="false">Event Title</h2>
+            <div class="detail-row"><span class="detail-label">When:</span> <span class="detail-value" id="det-time"></span></div>
+            <div class="detail-row"><span class="detail-label">Location:</span> <span class="detail-value" id="det-location" contenteditable="false"></span></div>
+            <div class="detail-row"><span class="detail-label">Created By:</span> <span class="detail-value" id="det-creator"></span></div>
+            <div class="detail-row"><span class="detail-label">Description:</span> <span class="detail-value" id="det-desc" contenteditable="false" style="display:block; min-height:40px;"></span></div>
+            <div class="modal-actions">
+                <button type="button" id="edit-detail-btn" class="btn-primary hidden">Edit</button>
+                <button type="button" id="save-detail-btn" class="btn-accent hidden">Save</button>
+                <button type="button" id="close-detail-btn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

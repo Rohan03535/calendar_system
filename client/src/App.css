@@ -1,0 +1,310 @@
+:root {
+  --primary: #2c3e50;
+  --secondary: #34495e;
+  --accent: #3498db;
+  --bg: #f8f9fa;
+  --text: #333;
+  --white: #ffffff;
+  --border: #ddd;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+/* Navigation */
+nav {
+  background-color: var(--primary);
+  color: var(--white);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+nav h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+nav a {
+  color: var(--white);
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-weight: 500;
+}
+
+nav button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+/* Main Container */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Auth Forms (Login/Register) */
+.auth-form {
+  background: var(--white);
+  padding: 2.5rem;
+  max-width: 400px;
+  margin: 4rem auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.auth-form h2 {
+  margin-top: 0;
+  color: var(--primary);
+}
+
+.auth-form input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  /* Important for padding */
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.auth-form button {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.auth-form button:hover {
+  background-color: #2980b9;
+}
+
+.error {
+  color: #e74c3c;
+  background: #fdeaea;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+/* Dashboard */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  background: var(--white);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar h2 {
+  margin: 0;
+}
+
+.toolbar button {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 1rem;
+}
+
+/* Reminders */
+.reminders-box {
+  background-color: #fff3cd;
+  border-left: 5px solid #ffc107;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  border-radius: 4px;
+}
+
+.reminders-box h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.reminders-box ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+/* Event List Table */
+.event-list {
+  background: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  /* For rounded corners */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background-color: var(--secondary);
+  color: var(--white);
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.status-PENDING {
+  background-color: #fff9e6;
+}
+
+/* Light yellow */
+.status-ACCEPTED {
+  background-color: #e8f5e9;
+}
+
+/* Light green */
+.status-DECLINED {
+  background-color: #ffebee;
+}
+
+/* Light red */
+
+/* Buttons in table */
+td button {
+  margin-right: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+td button:first-child {
+  background-color: #4CAF50;
+  /* Accept */
+  color: white;
+}
+
+td button:last-child {
+  background-color: #f44336;
+  /* Decline */
+  color: white;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--white);
+  padding: 2rem;
+  width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--bg);
+  padding-bottom: 0.5rem;
+}
+
+.modal label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.modal input,
+.modal textarea,
+.modal select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.modal-actions button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.modal-actions button[type="submit"] {
+  background-color: var(--accent);
+  color: white;
+}
+
+.modal-actions button[type="button"] {
+  background-color: #aaa;
+  color: white;
+}
+
+.tag-recur {
+  display: inline-block;
+  background-color: #607d8b;
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+}

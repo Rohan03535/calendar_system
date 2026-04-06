@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve frontend static files
+// Serve frontend static files (used only in local/standard dev)
 app.use(express.static(path.join(__dirname, 'public')));
 
 const pool = require('./db/db');
@@ -28,8 +28,7 @@ app.use((err, req, res, next) => {
 });
 
 // --- Background Notification Mailer ---
-// This acts as a background chron-job perfectly syncing with your Oracle Triggers
-setInterval(async () => {
+async function runNotificationPoller() {
     try {
         const [pendingNotifs] = await pool.query(
             `SELECT n.notification_id, n.message_content, u.email 
@@ -39,33 +38,39 @@ setInterval(async () => {
         );
         
         for (let notif of pendingNotifs) {
-            // 1. Send the Mock Email via NodeMailer
             const previewUrl = await sendEmailNotification(
                 notif.email, 
                 "New Event Calendar Activity", 
                 notif.message_content
             );
             
-            // Append the clickable email link
             let updatedMessage = notif.message_content;
             if (previewUrl) {
                 updatedMessage += ` <br/><a href="${previewUrl}" target="_blank" style="color:#00BFFF; font-weight:bold; text-decoration:underline;">[View Sent Email]</a>`;
             }
 
-            // 2. Mark as completed in Oracle DB and update the message with the HTML link
             await pool.query(
-                `UPDATE NOTIFICATIONS SET status = 'sent', sent_time = CURRENT_TIMESTAMP, message_content = :1 WHERE notification_id = :2`,
-                [updatedMessage, notif.notification_id],
-                { autoCommit: true }
+                `UPDATE NOTIFICATIONS SET status = 'sent', sent_time = CURRENT_TIMESTAMP, message_content = $1 WHERE notification_id = $2`,
+                [updatedMessage, notif.notification_id]
             );
         }
     } catch (err) {
-        // Silently catch so we don't crash server if DB is busy
-        // console.error("Mail Poller:", err.message);
+        // Silently catch so we don't crash server
+    } finally {
+        // Only run poller loop in non-serverless environments
+        if (process.env.VERCEL !== '1') {
+            setTimeout(runNotificationPoller, 5000);
+        }
     }
-}, 5000); // Checks every 5 seconds
+}
+runNotificationPoller();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Calendar System Server running on http://localhost:${PORT}`);
-});
+// Only listen locally, Vercel will export the app
+if (process.env.VERCEL !== '1') {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`Calendar System Server running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

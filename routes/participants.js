@@ -8,9 +8,8 @@ router.put('/:event_id/rsvp', async (req, res, next) => {
         const { user_id, rsvp_status } = req.body; 
         
         await pool.query(
-            `UPDATE EVENT_PARTICIPANTS SET rsvp_status = :1, responded_at = CURRENT_TIMESTAMP WHERE event_id = :2 AND user_id = :3`,
-            [rsvp_status, event_id, user_id],
-            { autoCommit: true }
+            `UPDATE EVENT_PARTICIPANTS SET rsvp_status = $1, responded_at = CURRENT_TIMESTAMP WHERE event_id = $2 AND user_id = $3`,
+            [rsvp_status, event_id, user_id]
         );
         res.json({ message: 'RSVP status updated successfully' });
     } catch (err) {

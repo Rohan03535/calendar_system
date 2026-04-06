@@ -3,6 +3,8 @@ let currentUser = null;
 let currentDate = new Date();
 let events = [];
 let currentEditingEventId = null;
+let currentEditingInstanceId = null;
+let currentEventIsHost = false;
 let allUsers = [];
 
 // DOM Elements Repository
@@ -11,6 +13,7 @@ const dom = {
     appContainer: document.getElementById('app-container'),
     loginEmail: document.getElementById('login-email'),
     loginBtn: document.getElementById('login-btn'),
+    registerBtn: document.getElementById('register-btn'),
     loginError: document.getElementById('login-error'),
     
     userName: document.getElementById('user-name'),
@@ -45,7 +48,10 @@ const dom = {
     detTime: document.getElementById('det-time'),
     detLocation: document.getElementById('det-location'),
     detCreator: document.getElementById('det-creator'),
-    detDesc: document.getElementById('det-desc')
+    detDesc: document.getElementById('det-desc'),
+    cancelEventBtn: document.getElementById('cancel-event-btn'),
+    viewAnalyticsBtn: document.getElementById('view-analytics-btn'),
+    runCleanupBtn: document.getElementById('run-cleanup-btn')
 };
 
 // Initialize Application
@@ -60,6 +66,7 @@ function init() {
 
 function setupEventListeners() {
     dom.loginBtn.addEventListener('click', handleLogin);
+    if(dom.registerBtn) dom.registerBtn.addEventListener('click', handleRegister);
     dom.logoutBtn.addEventListener('click', handleLogout);
     
     // Calendar Navigation (Month switching)
@@ -131,6 +138,22 @@ function setupEventListeners() {
     });
 
     dom.eventForm.addEventListener('submit', handleCreateEvent);
+    dom.cancelEventBtn.addEventListener('click', handleCancelEvent);
+    dom.viewAnalyticsBtn.addEventListener('click', runAttendanceReport);
+    
+    if (dom.runCleanupBtn) {
+        dom.runCleanupBtn.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/events/maintenance/cleanup', { method: 'POST' });
+                const data = await res.json();
+                alert("🧹 SYSTEM MAINTENANCE (Cursor Test)\n\n" + data.message);
+                fetchNotifications();
+                renderCalendar();
+            } catch(e) {
+                alert("❌ Error running cleanup.");
+            }
+        });
+    }
 }
 
 // --- Authentication --- //
@@ -143,9 +166,28 @@ async function handleLogin() {
             body: JSON.stringify({ email })
         });
         const data = await res.json();
-        if(!res.ok) throw new Error(data.error);
+        if(!res.ok) throw new Error(data.error || 'Login failed');
+        currentUser = data;
+        localStorage.setItem('dbsproject_user', JSON.stringify(currentUser));
+        showApp();
+    } catch(err) {
+        dom.loginError.textContent = err.message;
+    }
+}
+
+async function handleRegister() {
+    const email = dom.loginEmail.value.trim();
+    if(!email) return;
+    const username = email.split('@')[0];
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, username, password: 'password' })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error('Email already exists or is invalid.');
         
-        currentUser = data.user;
+        currentUser = { ...data, user_id: data.id, full_name: data.username };
         localStorage.setItem('dbsproject_user', JSON.stringify(currentUser));
         showApp();
     } catch(err) {
@@ -166,14 +208,17 @@ async function showApp() {
     dom.loginError.textContent = '';
     dom.appContainer.classList.remove('hidden');
     
-    dom.userName.textContent = currentUser.full_name;
-    dom.userEmail.textContent = currentUser.email;
-    dom.userAvatar.textContent = currentUser.full_name.charAt(0).toUpperCase();
+    // Robust check for names from Oracle (Full Name, Username, etc.)
+    const rawName = currentUser.full_name || currentUser.username || currentUser.FULL_NAME || currentUser.USERNAME;
+    dom.userName.textContent = rawName || "User";
+    dom.userEmail.textContent = currentUser.email || "";
+    dom.userAvatar.textContent = (dom.userName.textContent).charAt(0).toUpperCase();
 
     // Load dynamic sidebar data
     await fetchUsers(); 
     await fetchNotifications();
     // Render central view
+    currentDate = new Date(); // Reset to today on login to fix Nov 2023 issue
     renderCalendar();
 }
 
@@ -184,11 +229,13 @@ async function fetchUsers() {
     
     // Populate participants checkboxes
     allUsers.forEach(u => {
-        if(u.user_id !== currentUser.user_id) {
+        // Correcting field names from Oracle API (id, username, email)
+        // AND ensure we don't allow inviting ourselves
+        if(u.id !== currentUser.user_id && u.id !== currentUser.id) {
             const div = document.createElement('div');
             div.style.marginBottom = '5px';
             div.innerHTML = `<label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" name="invitee-check" value="${u.user_id}"> ${u.full_name}
+                <input type="checkbox" name="invitee-check" value="${u.id}"> ${u.username}
             </label>`;
             dom.evInvitees.appendChild(div);
         }
@@ -201,7 +248,7 @@ async function fetchNotifications() {
         const res = await fetch(`/api/notifications/${currentUser.user_id}`);
         const notifs = await res.json();
         
-        // filter only active alerts (pending or sent/delivered by mailer)
+        // Show BOTH pending and sent (archived by mailer) so checkmarks stay visible
         const visibleNotifs = notifs.filter(n => n.status === 'pending' || n.status === 'sent');
         dom.notifBadge.textContent = visibleNotifs.length;
         dom.notifList.innerHTML = '';
@@ -216,8 +263,9 @@ async function fetchNotifications() {
             div.className = 'notif-card';
             
             let actionButtons = '';
+            const status = (n.rsvp_status || '').trim().toLowerCase();
+            
             if (n.notification_type === 'invitation') {
-                const status = (n.rsvp_status || '').trim().toLowerCase();
                 if (status === 'pending') {
                     actionButtons = `
                         <div class="notif-actions">
@@ -226,7 +274,11 @@ async function fetchNotifications() {
                         </div>
                     `;
                 } else if (status === 'accepted') {
-                    actionButtons = `<div style="margin-top:8px; color:var(--success); font-size:0.75rem; font-weight:600;">✅ Accepted</div>`;
+                    actionButtons = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                            <span style="color:var(--success); font-size:0.75rem; font-weight:600;">✅ Accepted</span>
+                        </div>
+                    `;
                 }
             }
 
@@ -269,14 +321,14 @@ async function handleRSVP(notificationId, status) {
         });
         
         if (res.ok) {
-            // Refresh notifications and calendar
+            // Silence success alerts as per user request to decrease popups
             await fetchNotifications();
             await renderCalendar();
         } else {
-            alert("Failed to submit RSVP");
+            alert("❌ Failed to submit RSVP");
         }
     } catch (err) {
-        console.error(err);
+        console.error("RSVP Error:", err);
     }
 }
 
@@ -355,7 +407,10 @@ async function renderCalendar() {
                     chip.style.borderLeft = `5px solid ${ev.color_code}`;
                 }
                 
-                chip.textContent = `${timeStr} ${ev.title}`;
+                const rsvp = ev.instance_status || 'pending';
+                const statusTag = isShared ? `<span style="font-size:0.6rem; padding:2px 4px; border-radius:4px; margin-left:4px; font-weight:700; color:#fff; background:${rsvp === 'accepted' ? '#2ea043' : (rsvp === 'declined' ? '#da3633' : '#8b949e')}">${rsvp.toUpperCase()}</span>` : '';
+                
+                chip.innerHTML = `<span style="font-size:0.7rem; font-weight:700; opacity:0.8;">${timeStr}</span> ${ev.title} ${statusTag}`;
                 chip.title = `${ev.title} (From: ${ev.creator_name || 'You'})`;
                 
                 chip.addEventListener('click', () => {
@@ -373,12 +428,18 @@ async function renderCalendar() {
                     dom.detDesc.textContent = ev.description || "No description provided.";
                     
                     currentEditingEventId = ev.event_id;
+                    currentEditingInstanceId = ev.instance_id;
+                    currentEventIsHost = (ev.creator_id === (currentUser.user_id || currentUser.id));
                     
-                    if (ev.creator_id === currentUser.user_id) {
+                    if (currentEventIsHost) {
                         dom.editDetBtn.classList.remove('hidden');
+                        dom.cancelEventBtn.classList.remove('hidden');
+                        dom.cancelEventBtn.textContent = 'Cancel Meeting';
                         dom.saveDetBtn.classList.add('hidden');
                     } else {
                         dom.editDetBtn.classList.add('hidden');
+                        dom.cancelEventBtn.classList.remove('hidden');
+                        dom.cancelEventBtn.textContent = 'Cancel/Decline';
                         dom.saveDetBtn.classList.add('hidden');
                     }
                     
@@ -403,7 +464,7 @@ async function handleCreateEvent(e) {
     
     const payload = {
         creator_id: currentUser.user_id,
-        category_id: dom.evCategory.value ? parseInt(dom.evCategory.value) : null,
+        category_id: null, // Hardcoded IDs in HTML cause ORA-02291. Setting to NULL for stability.
         title: document.getElementById('ev-title').value,
         description: dom.evDescription.value,
         start_time: document.getElementById('ev-start').value,
@@ -441,6 +502,57 @@ async function handleCreateEvent(e) {
     } catch(err) {
         alert(err.message);
     }
+}
+
+async function handleCancelEvent() {
+    console.log("Cancelling Event ID:", currentEditingEventId);
+    console.log("Cancelling Instance ID:", currentEditingInstanceId);
+    
+    if (!confirm("Are you sure you want to cancel this event?")) return;
+    
+    const uid = currentUser.user_id || currentUser.id;
+    if (!uid || !currentEditingEventId) {
+        alert("Action failed: Missing session IDs. Please refresh.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/events/${currentEditingEventId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_id: uid,
+                instance_id: currentEditingInstanceId
+            })
+        });
+        
+        if (res.ok) {
+            dom.detModal.classList.add('hidden');
+            const msg = currentEventIsHost ? "Event series cancelled." : "You have successfully declined this specific meeting.";
+            alert("✅ SUCCESS: " + msg);
+            renderCalendar();
+            fetchNotifications(); 
+        } else {
+            const errData = await res.json();
+            alert("❌ DATABASE ERROR: " + (errData.error || "Reason unknown"));
+        }
+    } catch(e) { 
+        console.error("Cancel Error:", e);
+        alert("❌ NETWORK ERROR: Failed to reach the server.");
+    }
+}
+
+async function runAttendanceReport() {
+    try {
+        const res = await fetch('/api/events/report/attendance');
+        const data = await res.json();
+        if(!data || data.length === 0) {
+            alert("📊 ATTENDANCE SUMMARY (SQL View Test)\n\nNo activity data yet. Create events and accept invites!");
+            return;
+        }
+        const report = data.map(r => `${r.username || r.full_name}: ${r.attendance_rate}% (${r.accepted_count}/${r.total_invites})`).join('\n');
+        alert("📊 ATTENDANCE SUMMARY (SQL View Test)\n\n" + report);
+    } catch(e) { alert("Error fetching report"); }
 }
 
 // Bootstrap

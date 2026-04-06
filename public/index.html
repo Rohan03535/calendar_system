@@ -13,9 +13,12 @@
         <div class="glass-panel login-card">
             <h1>Welcome Back</h1>
             <p>Sign in to your shared calendar workspace.</p>
-            <div class="input-group">
+            <div class="input-group" style="display:flex; flex-direction:column; gap:10px;">
                 <input type="email" id="login-email" placeholder="alice@student.uni.edu">
-                <button id="login-btn" class="btn-primary">Sign In</button>
+                <div style="display:flex; gap:10px;">
+                    <button id="login-btn" class="btn-primary" style="flex:1;">Sign In</button>
+                    <button id="register-btn" class="btn-secondary" style="flex:1;">Create Account</button>
+                </div>
             </div>
             <p id="login-error" class="error-text"></p>
         </div>
@@ -35,7 +38,9 @@
                 <button id="logout-btn" class="btn-icon" title="Logout">🚪</button>
             </div>
             
-            <button id="new-event-btn" class="btn-primary btn-block">+ New Event</button>
+                <button id="new-event-btn" class="btn-primary btn-block">+ New Event</button>
+                <button id="view-analytics-btn" class="btn-accent btn-block">Attendance Summary</button>
+                <button id="run-cleanup-btn" class="btn-secondary btn-block" style="margin-top:8px;">DB Cleanup</button>
 
             <div class="notifications-section">
                 <h3>Notifications <span id="notif-badge" class="badge">0</span></h3>
@@ -124,6 +129,7 @@
             <div class="detail-row"><span class="detail-label">Created By:</span> <span class="detail-value" id="det-creator"></span></div>
             <div class="detail-row"><span class="detail-label">Description:</span> <span class="detail-value" id="det-desc" contenteditable="false" style="display:block; min-height:40px;"></span></div>
             <div class="modal-actions">
+                <button type="button" id="cancel-event-btn" class="btn-cancel hidden">Cancel Meeting</button>
                 <button type="button" id="edit-detail-btn" class="btn-primary hidden">Edit</button>
                 <button type="button" id="save-detail-btn" class="btn-accent hidden">Save</button>
                 <button type="button" id="close-detail-btn" class="btn-secondary">Close</button>
